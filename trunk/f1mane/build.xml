@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- ======================================================================
+     28/07/2007
+
+     project    F1-Mane
+     description Build file padrão
+
+     Paulo Sobreira
+     
+     java -Xmx512M -Xms512M  -cp .f1maneRecursos.jar; -jar f1mane.jar
+     
+     keytool -genkey -keystore jar-keystore -alias f1mane-key
+
+     ====================================================================== -->
+<project name="F1-Mane" default="targetPadrao">
+	<property name="TOMCAT_HOME"       value="E:\apache-tomcat-7.0.35"/>
+	<path id="classpath.compilacao">
+		<fileset dir="${TOMCAT_HOME}/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="WebContent/WEB-INF/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="build">
+			<include name="**/*.class" />
+		</fileset>
+		<pathelement location="build" />
+	</path>
+
+	<target name="targetPadrao" depends="atualizaVersao,copiaRecursos,compilarClasses,criarJarRecursos,criarJar,atualizaPaddock,criarWar,limpaJars">
+	</target>
+
+	<target name="targetFullInstall" depends="atualizaVersao,copiaRecursos,compilarClasses,criarJarRecursos,criarJarPistas,criarJar,sign_jar,criarZip,limpaJars">
+	</target>
+
+	<target name="atualizaVersao">
+		<propertyfile file="src/sowbreira/f1mane/paddock/applet/client.properties">
+			<entry operation="+" key="versao" type="int" value="1" />
+		</propertyfile>
+	</target>
+
+	<target name="compilarClasses">
+		<javac destdir="build" srcdir="src" nowarn="true" optimize="true">
+			<classpath refid="classpath.compilacao" />
+		</javac>
+	</target>
+
+	<target name="copiaRecursos">
+		<delete dir="build" />
+		<mkdir dir="build" />
+		<copy todir="build" verbose="true">
+			<fileset dir="src">
+				<exclude name=".*" />
+				<exclude name=".*/" />
+				<!-- <exclude name="**/*.java" /> -->
+				<exclude name="**/*.jpg" />
+				<exclude name="**/*.db" />
+			</fileset>
+		</copy>
+	</target>
+	<target name="criarJar">
+		<jar jarfile="f1mane.jar" compress="true" manifest="MANIFEST.MF">
+			<fileset dir="build">
+				<exclude name=".*" />
+				<exclude name=".*/" />
+				<!-- <exclude name="**/*.java" /> -->
+				<exclude name="build.xml" />
+				<exclude name="log4j.properties" />
+				<exclude name="sowbreira/f1mane/recursos/**/*.gif" />
+				<exclude name="sowbreira/f1mane/recursos/**/*.png" />
+				<exclude name="sowbreira/f1mane/recursos/**/*.wav" />
+			</fileset>
+		</jar>
+	</target>
+	<target name="criarJarRecursos">
+		<jar jarfile="f1maneRecursos.jar" compress="true" manifest="MANIFEST.MF">
+			<fileset dir="src">
+				<include name="sowbreira/f1mane/recursos/**/*.jpg" />
+				<include name="sowbreira/f1mane/recursos/carros/**/*.gif" />
+				<include name="sowbreira/f1mane/recursos/**/*.gif" />
+				<include name="sowbreira/f1mane/recursos/**/*.png" />
+				<include name="sowbreira/f1mane/recursos/**/*.wav" />
+				<exclude name="sowbreira/f1mane/recursos/**/*_mro.jpg" />
+			</fileset>
+		</jar>
+
+	</target>
+
+	<target name="criarJarPistas">
+		<jar jarfile="f1manePistas.jar" compress="true" manifest="MANIFEST.MF">
+			<fileset dir="src">
+				<include name="sowbreira/f1mane/recursos/**/*_mro.jpg" />
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="atualizaPaddock">
+		<delete file="WebContent/WEB-INF/lib/f1mane.jar" />
+		<delete file="WebContent/f1mane.jar" />
+		<copy file="f1mane.jar" todir="WebContent/WEB-INF/lib" />
+		<copy file="f1maneRecursos.jar" todir="WebContent" />
+		<copy file="f1mane.jar" todir="WebContent" />
+		<copy todir="WebContent">
+			<fileset dir="src">
+				<include name="**/*_mro.jpg" />
+			</fileset>
+		</copy>
+	</target>
+	<target name="criarWar">
+		<delete dir="${TOMCAT_HOME}/webapps/f1mane" />
+		<war compress="on" destfile="${TOMCAT_HOME}/webapps/f1mane.war">
+			<fileset dir="WebContent" />
+		</war>
+		<delete dir="WebContent/sowbreira" />
+	</target>
+
+
+	<target name="sign_jar">
+		<copy todir=".">
+			<fileset dir="WebContent/WEB-INF/lib">
+				<include name="commons-beanutils-1.8.2.jar" />
+				<include name="commons-logging-1.1.1.jar" />
+			</fileset>
+		</copy>
+		<delete file="a-f1mane.jar" />
+		<delete file="a-f1maneRecursos.jar" />
+		<delete file="a-f1manePistas.jar" />
+		<delete file="a-commons-beanutils-1.8.2.jar" />
+		<delete file="a-commons-logging-1.1.1.jar" />
+		<signjar jar="f1mane.jar" signedjar="a-f1mane.jar" alias="f1mane-key" keystore="jar-keystore" storepass="123456" keypass="123456">
+		</signjar>
+		<signjar jar="f1maneRecursos.jar" signedjar="a-f1maneRecursos.jar" alias="f1mane-key" keystore="jar-keystore" storepass="123456" keypass="123456">
+		</signjar>
+		<signjar jar="f1manePistas.jar" signedjar="a-f1manePistas.jar" alias="f1mane-key" keystore="jar-keystore" storepass="123456" keypass="123456">
+		</signjar>
+		<signjar jar="commons-beanutils-1.8.2.jar" signedjar="a-commons-beanutils-1.8.2.jar" alias="f1mane-key" keystore="jar-keystore" storepass="123456" keypass="123456">
+		</signjar>
+		<signjar jar="commons-logging-1.1.1.jar" signedjar="a-commons-logging-1.1.1.jar" alias="f1mane-key" keystore="jar-keystore" storepass="123456" keypass="123456">
+		</signjar>
+		<delete file="f1mane.jar" />
+		<delete file="f1maneRecursos.jar" />
+		<delete file="f1manePistas.jar" />
+		<delete file="commons-beanutils-1.8.2.jar" />
+		<delete file="commons-logging-1.1.1.jar" />
+	</target>
+
+	<target name="criarZip">
+		<zip destfile="f1mane.zip" compress="true">
+			<fileset dir=".">
+				<include name="*.jar" />
+				<include name="f1maneLocal.jnlp" />
+				<include name="f1maneEditor.jnlp" />
+				<include name="Descompatar.bat" />
+				<include name="Editor.bat" />
+				<include name="F1mane.bat" />
+				<include name="F1mane-Descompatado.bat" />
+			</fileset>
+			<fileset dir="WebContent">
+				<include name="f1maneLocal.jnlp" />
+				<include name="f1maneEditor.jnlp" />				
+			</fileset>
+		</zip>
+		<delete>
+			<fileset dir=".">
+				<include name="*.jar" />
+			</fileset>
+		</delete>
+	</target>
+	
+	<target name="limpaJars">
+		<delete>
+			<fileset dir=".">
+				<include name="*.jar" />
+			</fileset>
+		</delete>
+	</target>	
+
+
+</project>
